@@ -1,6 +1,6 @@
 import numpy as np
 import keras.backend.tensorflow_backend as backend
-from keras.models import Sequential
+from keras.models import Sequential, load_model
 from keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, Activation, Flatten
 from keras.optimizers import Adam
 import tensorflow as tf
@@ -13,21 +13,24 @@ from PIL import Image
 import cv2
 from handler import *
 
+LOAD_MODEL = "models/2x256__-50000.00max_-50320.00avg_-50900.00min__1562447395.model"
+
 DISCOUNT = 0.99
 REPLAY_MEMORY_SIZE = 50_000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 1_000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 5  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
-MIN_REWARD = -9500  # For model save
+MIN_REWARD = -30_000  # For model save
+SAVE_EVERY = 300
 MEMORY_FRACTION = 0.20
 
 # Environment settings
-EPISODES = 50000
+EPISODES = 50_000
 
 # Exploration settings
-epsilon = 1  # not a constant, going to be decayed
-EPSILON_DECAY = 0.9975 # 0.99975
+epsilon = 0.5  # not a constant, going to be decayed
+EPSILON_DECAY = 0.9995 # 0.99975
 MIN_EPSILON = 0.001
 
 #  Stats settings
@@ -63,23 +66,29 @@ class DQNAgent:
         self.target_update_counter = 0
 
     def create_model(self):
-        model = Sequential()
+        if LOAD_MODEL is not None:
+            print(f"Loading {LOAD_MODEL}")
+            model = load_model(LOAD_MODEL)
+            print(f"Model {LOAD_MODEL} loaded!")
+            pass
+        else:
+            model = Sequential()
 
-        model.add(Conv2D(256, (3,3), input_shape=(env.OBSERVATION_SPACE_VALUES)))
-        model.add(Activation("relu"))
-        model.add(MaxPooling2D(2,2))
-        model.add(Dropout(0.2))
+            model.add(Conv2D(256, (3,3), input_shape=(env.OBSERVATION_SPACE_VALUES)))
+            model.add(Activation("relu"))
+            model.add(MaxPooling2D(2,2))
+            model.add(Dropout(0.2))
 
-        model.add(Conv2D(256, (3,3)))
-        model.add(Activation("relu"))
-        model.add(MaxPooling2D(2,2))
-        model.add(Dropout(0.2))
+            model.add(Conv2D(256, (3,3)))
+            model.add(Activation("relu"))
+            model.add(MaxPooling2D(2,2))
+            model.add(Dropout(0.2))
 
-        model.add(Flatten())
-        model.add(Dense(64))
+            model.add(Flatten())
+            model.add(Dense(64))
 
-        model.add(Dense(env.ACTION_SPACE_SIZE, activation="linear"))
-        model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
+            model.add(Dense(env.ACTION_SPACE_SIZE, activation="linear"))
+            model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
 
         return model
 
@@ -172,10 +181,14 @@ for episode in tqdm(range(1, EPISODES+1), ascii=True, unit = "episode"):
         agent.tensorboard.update_stats(reward_avg=average_reward, reward_min=min_reward, reward_max=max_reward, epsilon=epsilon)
 
         # Save model, but only when min reward is greater or equal a set value
-        if min_reward >= MIN_REWARD:
+        if episode % SAVE_EVERY == 0 or EPISODES == episode:
             agent.model.save(f'models/{MODEL_NAME}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}.model')
 
     # Decay epsilon
     if epsilon > MIN_EPSILON:
         epsilon *= EPSILON_DECAY
         epsilon = max(MIN_EPSILON, epsilon)
+        
+    # let epsilon start over at the half way point
+    if episode % EPISODES/2:
+        epsilon = 1

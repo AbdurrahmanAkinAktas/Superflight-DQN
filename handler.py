@@ -1,20 +1,19 @@
 import cv2
 import numpy as np
-from ocr import extract_score, is_done
 from windowGrab import windowGrab
 from memory_helper import get_pid, calculate_final_address, read_value_from_memory
 from keras.callbacks import TensorBoard
 import tensorflow as tf
-from key_helper import *
+from key_helper import UP, DOWN, LEFT, RIGHT, NOTHING, SPACE, ESC, press
 import traceback
 import time
 
 class environment():
-    DEATH_REWARD = -50000
+    DEATH_REWARD = -50_000
     IDLE_REWARD = -100
-    SCORE_REWARD = 3000
+    SCORE_REWARD = 3_000
     TEMP_SCORE_REWARD = 200
-    BIG_SCORE_REWARD = 6000
+    BIG_SCORE_REWARD = 6_000
 
     ACTION_SPACE_SIZE = 5
 
@@ -52,22 +51,24 @@ class environment():
 
     def apply_action(self, action):
         # this is supposed to prevent the agent from accidentaly fiddling in the menus
+        in_menu = False
         if self.game_state == 1 or self.game_state == 2:
-            press(ESC)
-            return
+            in_menu = True
 
-        if action == 0:
+        if action == 0 and not in_menu:
             press(UP)
-        elif action == 1:
+        elif action == 1 and not in_menu:
             press(DOWN)
-        elif action == 2:
+        elif action == 2 and not in_menu:
             press(LEFT)
-        elif action == 3:
+        elif action == 3 and not in_menu:
             press(RIGHT)
-        elif action == 4:
+        elif action == 4 and not in_menu:
             press(NOTHING)
-        elif action == 5:
+        elif action == 5 and not in_menu:
             press(SPACE)
+        else:
+            press(ESC)
 
 
 
