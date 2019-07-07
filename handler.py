@@ -65,10 +65,10 @@ class environment():
             press(RIGHT)
         elif action == 4 and not in_menu:
             press(NOTHING)
-        elif action == 5 and not in_menu:
+        elif action == 5 and in_menu:
             press(SPACE)
-        else:
-            press(ESC)
+        # else:
+        #     press(ESC)
 
     def step(self, action):
         try:
@@ -95,11 +95,12 @@ class environment():
 
             # game_state: 0=playing; 1=paused; 2=crashed 
             if self.game_state == 1:
-                self.apply_action(5)
+                #self.apply_action(5)
+                pass
             # if agent crashes, the epsiode is over
             elif self.game_state == 2:
                 done = True
-                self.apply_action(5)
+                # self.apply_action(5)
                 
 
             # reward for this step:

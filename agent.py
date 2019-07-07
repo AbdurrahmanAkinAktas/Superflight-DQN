@@ -26,10 +26,10 @@ SAVE_EVERY = 300
 MEMORY_FRACTION = 0.20
 
 # Environment settings
-EPISODES = 50_000
+EPISODES = 10_000
 
 # Exploration settings
-epsilon = 0.85  # not a constant, going to be decayed
+epsilon = 1  # not a constant, going to be decayed
 EPSILON_DECAY = 0.99975 # 0.99975
 MIN_EPSILON = 0.001
 
@@ -98,7 +98,7 @@ class DQNAgent:
     def get_qs(self, state):
         return self.model.predict(np.array(state).reshape(-1, *state.shape)/255)[0]
 
-    def train(self, terminal_state, step):
+    def train(self, terminal_state):
         if len(self.replay_memory) < MIN_REPLAY_MEMORY_SIZE:
             return
         
@@ -164,22 +164,27 @@ for episode in tqdm(range(1, EPISODES+1), ascii=True, unit = "episode"):
         else:
             action = np.random.randint(0, env.ACTION_SPACE_SIZE)
 
-        print(action)
+        # print(action)
         # if action == 4:
         #     print("-------------------------------------")
 
         new_state, reward, done = env.step(action)
 
+        reward = reward if not done else env.DEATH_REWARD
+
         episode_reward += reward
 
+        #save the state and action pairs
         agent.update_replay_memory((current_state, action, reward, new_state, done))
-        agent.train(done, step)
         
         current_state = new_state
-        step += 1
+
+    agent.train(done)
+        
+    step += 1
 
         # print(time.time() - last_time)
-    env.apply_action(4)
+    
 
     # Append episode reward to a list and log stats (every given number of episodes)
     ep_rewards.append(episode_reward)
