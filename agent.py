@@ -13,11 +13,11 @@ from PIL import Image
 import cv2
 from handler import *
 
-LOAD_MODEL = "models/2x256__-50000.00max_-50320.00avg_-50900.00min__1562447395.model"
+LOAD_MODEL = None # "models/2x256__-50300.00max_-50440.00avg_-50600.00min__1562472483.model"
 
 DISCOUNT = 0.99
-REPLAY_MEMORY_SIZE = 50_000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 1_000  # Minimum number of steps in a memory to start training
+REPLAY_MEMORY_SIZE = 1_000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 5  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
@@ -29,8 +29,8 @@ MEMORY_FRACTION = 0.20
 EPISODES = 50_000
 
 # Exploration settings
-epsilon = 0.5  # not a constant, going to be decayed
-EPSILON_DECAY = 0.9995 # 0.99975
+epsilon = 0.85  # not a constant, going to be decayed
+EPSILON_DECAY = 0.99975 # 0.99975
 MIN_EPSILON = 0.001
 
 #  Stats settings
@@ -154,12 +154,19 @@ for episode in tqdm(range(1, EPISODES+1), ascii=True, unit = "episode"):
     done = False
 
     while not done:
-        if env.game_state == 2:
-            env.apply_action(5)
-        elif np.random.random() > epsilon:
+
+        # last_time = time.time()
+
+        # if env.game_state == 2:
+        #     env.apply_action(5)
+        if np.random.random() > epsilon:
             action = np.argmax(agent.get_qs(current_state))
         else:
             action = np.random.randint(0, env.ACTION_SPACE_SIZE)
+
+        print(action)
+        # if action == 4:
+        #     print("-------------------------------------")
 
         new_state, reward, done = env.step(action)
 
@@ -170,6 +177,8 @@ for episode in tqdm(range(1, EPISODES+1), ascii=True, unit = "episode"):
         
         current_state = new_state
         step += 1
+
+        # print(time.time() - last_time)
     env.apply_action(4)
 
     # Append episode reward to a list and log stats (every given number of episodes)
@@ -183,6 +192,7 @@ for episode in tqdm(range(1, EPISODES+1), ascii=True, unit = "episode"):
         # Save model, but only when min reward is greater or equal a set value
         if episode % SAVE_EVERY == 0 or EPISODES == episode:
             agent.model.save(f'models/{MODEL_NAME}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}.model')
+            print("Saving Model", "Epsilon is: ", epsilon)
 
     # Decay epsilon
     if epsilon > MIN_EPSILON:
@@ -190,5 +200,5 @@ for episode in tqdm(range(1, EPISODES+1), ascii=True, unit = "episode"):
         epsilon = max(MIN_EPSILON, epsilon)
         
     # let epsilon start over at the half way point
-    if episode % EPISODES/2:
-        epsilon = 1
+    # if episode % EPISODES/2:
+    #     epsilon = 1

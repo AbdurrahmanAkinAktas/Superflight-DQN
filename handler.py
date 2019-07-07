@@ -70,8 +70,6 @@ class environment():
         else:
             press(ESC)
 
-
-
     def step(self, action):
         try:
             #last_time = time.time()
