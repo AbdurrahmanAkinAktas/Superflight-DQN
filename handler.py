@@ -9,16 +9,16 @@ import traceback
 import time
 
 class environment():
-    DEATH_REWARD = -50_000
-    IDLE_REWARD = -100
+    DEATH_REWARD = -20_000
+    IDLE_REWARD = -150
     SCORE_REWARD = 3_000
     TEMP_SCORE_REWARD = 200
     BIG_SCORE_REWARD = 6_000
 
-    ACTION_SPACE_SIZE = 5
+    ACTION_SPACE_SIZE = 9
 
-    WIDTH = 100
-    HEIGHT = 75
+    WIDTH = 200
+    HEIGHT = 150
 
     OBSERVATION_SPACE_VALUES = (HEIGHT, WIDTH, 3)
 
@@ -64,8 +64,16 @@ class environment():
         elif action == 3 and not in_menu:
             press(RIGHT)
         elif action == 4 and not in_menu:
+            press(UP, LEFT)
+        elif action == 5 and not in_menu:
+            press(UP, RIGHT)
+        elif action == 6 and not in_menu:
+            press(DOWN, LEFT)
+        elif action == 7 and not in_menu:
+            press(DOWN, RIGHT)
+        elif action == 8 and not in_menu:
             press(NOTHING)
-        elif action == 5 and in_menu:
+        elif action == 9 and in_menu:
             press(SPACE)
         # else:
         #     press(ESC)
@@ -95,13 +103,10 @@ class environment():
 
             # game_state: 0=playing; 1=paused; 2=crashed 
             if self.game_state == 1:
-                #self.apply_action(5)
                 pass
             # if agent crashes, the epsiode is over
             elif self.game_state == 2:
-                done = True
-                # self.apply_action(5)
-                
+                done = True                
 
             # reward for this step:
             

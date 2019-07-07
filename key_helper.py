@@ -2,8 +2,8 @@ from win32con import KEYEVENTF_KEYUP
 from win32api import keybd_event
 import time
 
-UP = 0x57
-DOWN = 0x53
+UP = 0x53
+DOWN = 0x57
 LEFT = 0x41
 RIGHT = 0x44
 SPACE = 0x20
@@ -20,5 +20,9 @@ def press(*args):
     for i in args:
         if i != NOTHING:
             keybd_event(i, 0,0,0)
-            time.sleep(.05)
+
+    time.sleep(.05)
+
+    for i in args:
+        if i != NOTHING:
             keybd_event(i,0 ,KEYEVENTF_KEYUP ,0)

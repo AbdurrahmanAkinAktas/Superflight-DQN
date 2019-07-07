@@ -13,20 +13,22 @@ from PIL import Image
 import cv2
 from handler import *
 
-LOAD_MODEL = None # "models/2x256__-50300.00max_-50440.00avg_-50600.00min__1562472483.model"
+LOAD_MODEL = None # "models/2x256__-43300.00max_-46920.00avg_-52400.00min__1562512405.model"
 
 DISCOUNT = 0.99
-REPLAY_MEMORY_SIZE = 1_000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
+REPLAY_MEMORY_SIZE = 3_000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 500  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 32  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 5  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
 MIN_REWARD = -30_000  # For model save
-SAVE_EVERY = 300
+SAVE_EVERY = 150
 MEMORY_FRACTION = 0.20
 
 # Environment settings
 EPISODES = 10_000
+
+LEARNING_RATE = 0.001
 
 # Exploration settings
 epsilon = 1  # not a constant, going to be decayed
@@ -43,9 +45,9 @@ env = environment()
 ep_rewards = [-200]
 
 # For more repetitive results
-random.seed(1)
-np.random.seed(1)
-tf.set_random_seed(1)
+random.seed(1337)
+np.random.seed(1337)
+tf.set_random_seed(1337)
 
 # Create models folder
 if not os.path.isdir('models'):
@@ -88,7 +90,7 @@ class DQNAgent:
             model.add(Dense(64))
 
             model.add(Dense(env.ACTION_SPACE_SIZE, activation="linear"))
-            model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
+            model.compile(loss="mse", optimizer=Adam(lr=LEARNING_RATE), metrics=['accuracy'])
 
         return model
 
@@ -155,7 +157,7 @@ for episode in tqdm(range(1, EPISODES+1), ascii=True, unit = "episode"):
 
     while not done:
 
-        # last_time = time.time()
+        last_time = time.time()
 
         # if env.game_state == 2:
         #     env.apply_action(5)
@@ -178,12 +180,13 @@ for episode in tqdm(range(1, EPISODES+1), ascii=True, unit = "episode"):
         agent.update_replay_memory((current_state, action, reward, new_state, done))
         
         current_state = new_state
+        
+        print(f"Action: {action} | Loop took: {time.time() - last_time}")
 
     agent.train(done)
         
     step += 1
 
-        # print(time.time() - last_time)
     
 
     # Append episode reward to a list and log stats (every given number of episodes)
@@ -197,7 +200,7 @@ for episode in tqdm(range(1, EPISODES+1), ascii=True, unit = "episode"):
         # Save model, but only when min reward is greater or equal a set value
         if episode % SAVE_EVERY == 0 or EPISODES == episode:
             agent.model.save(f'models/{MODEL_NAME}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}.model')
-            print("Saving Model", "Epsilon is: ", epsilon)
+            print("\n Saving Model", "Epsilon is: ", epsilon)
 
     # Decay epsilon
     if epsilon > MIN_EPSILON:
@@ -205,5 +208,5 @@ for episode in tqdm(range(1, EPISODES+1), ascii=True, unit = "episode"):
         epsilon = max(MIN_EPSILON, epsilon)
         
     # let epsilon start over at the half way point
-    # if episode % EPISODES/2:
-    #     epsilon = 1
+    # if episode % EPISODES/2 == 0:
+    #     epsilon = 0.8
