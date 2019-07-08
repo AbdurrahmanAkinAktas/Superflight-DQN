@@ -13,11 +13,11 @@ from PIL import Image
 import cv2
 from handler import *
 
-LOAD_MODEL = None # "models/2x256__-43300.00max_-46920.00avg_-52400.00min__1562512405.model"
+LOAD_MODEL = "models/2x256__-17350.00max_-22770.00avg_-27850.00min__1562545118.model"
 
 DISCOUNT = 0.99
-REPLAY_MEMORY_SIZE = 3_000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 500  # Minimum number of steps in a memory to start training
+REPLAY_MEMORY_SIZE = 2_000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 400  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 32  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 5  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
@@ -26,12 +26,12 @@ SAVE_EVERY = 150
 MEMORY_FRACTION = 0.20
 
 # Environment settings
-EPISODES = 10_000
+EPISODES = 6_000
 
 LEARNING_RATE = 0.001
 
 # Exploration settings
-epsilon = 1  # not a constant, going to be decayed
+epsilon = 0.35 # not a constant, going to be decayed
 EPSILON_DECAY = 0.99975 # 0.99975
 MIN_EPSILON = 0.001
 
@@ -199,8 +199,7 @@ for episode in tqdm(range(1, EPISODES+1), ascii=True, unit = "episode"):
 
         # Save model, but only when min reward is greater or equal a set value
         if episode % SAVE_EVERY == 0 or EPISODES == episode:
-            agent.model.save(f'models/{MODEL_NAME}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}.model')
-            print("\n Saving Model", "Epsilon is: ", epsilon)
+            agent.model.save(f'models/{MODEL_NAME}__epsilon_{epsilon}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}.model')
 
     # Decay epsilon
     if epsilon > MIN_EPSILON:

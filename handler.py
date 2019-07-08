@@ -10,7 +10,7 @@ import time
 
 class environment():
     DEATH_REWARD = -20_000
-    IDLE_REWARD = -150
+    IDLE_REWARD = -250
     SCORE_REWARD = 3_000
     TEMP_SCORE_REWARD = 200
     BIG_SCORE_REWARD = 6_000
