@@ -13,7 +13,7 @@ from PIL import Image
 import cv2
 from handler import *
 
-LOAD_MODEL = "models/2x256__-17350.00max_-22770.00avg_-27850.00min__1562545118.model"
+LOAD_MODEL = "models/2x256__-21750.00max_-23690.00avg_-26250.00min__1562564159.model"
 
 DISCOUNT = 0.99
 REPLAY_MEMORY_SIZE = 2_000  # How many last steps to keep for model training
@@ -146,66 +146,66 @@ class DQNAgent:
 if __name__ == '__main__':
     agent = DQNAgent()
 
-for episode in tqdm(range(1, EPISODES+1), ascii=True, unit = "episode"):
-    agent.tensorboard.step = episode
+    for episode in tqdm(range(1, EPISODES+1), ascii=True, unit = "episode"):
+        agent.tensorboard.step = episode
 
-    episode_reward = 0
-    step = 1
-    current_state = env.reset()
+        episode_reward = 0
+        step = 1
+        current_state = env.reset()
 
-    done = False
+        done = False
 
-    while not done:
+        while not done:
 
-        last_time = time.time()
+            last_time = time.time()
 
-        # if env.game_state == 2:
-        #     env.apply_action(5)
-        if np.random.random() > epsilon:
-            action = np.argmax(agent.get_qs(current_state))
-        else:
-            action = np.random.randint(0, env.ACTION_SPACE_SIZE)
+            # if env.game_state == 2:
+            #     env.apply_action(5)
+            if np.random.random() > epsilon:
+                action = np.argmax(agent.get_qs(current_state))
+            else:
+                action = np.random.randint(0, env.ACTION_SPACE_SIZE)
 
-        # print(action)
-        # if action == 4:
-        #     print("-------------------------------------")
+            # print(action)
+            # if action == 4:
+            #     print("-------------------------------------")
 
-        new_state, reward, done = env.step(action)
+            new_state, reward, done = env.step(action)
 
-        reward = reward if not done else env.DEATH_REWARD
+            reward = reward if not done else env.DEATH_REWARD
 
-        episode_reward += reward
+            episode_reward += reward
 
-        #save the state and action pairs
-        agent.update_replay_memory((current_state, action, reward, new_state, done))
+            #save the state and action pairs
+            agent.update_replay_memory((current_state, action, reward, new_state, done))
+            
+            current_state = new_state
+            
+            print(f"Action: {action} | Loop took: {time.time() - last_time}")
+
+        agent.train(done)
+            
+        step += 1
+
         
-        current_state = new_state
-        
-        print(f"Action: {action} | Loop took: {time.time() - last_time}")
 
-    agent.train(done)
-        
-    step += 1
+        # Append episode reward to a list and log stats (every given number of episodes)
+        ep_rewards.append(episode_reward)
+        if not episode % AGGREGATE_STATS_EVERY or episode == 1:
+            average_reward = sum(ep_rewards[-AGGREGATE_STATS_EVERY:])/len(ep_rewards[-AGGREGATE_STATS_EVERY:])
+            min_reward = min(ep_rewards[-AGGREGATE_STATS_EVERY:])
+            max_reward = max(ep_rewards[-AGGREGATE_STATS_EVERY:])
+            agent.tensorboard.update_stats(reward_avg=average_reward, reward_min=min_reward, reward_max=max_reward, epsilon=epsilon)
 
-    
+            # Save model, but only when min reward is greater or equal a set value
+            if episode % SAVE_EVERY == 0 or EPISODES == episode:
+                agent.model.save(f'models/{MODEL_NAME}__epsilon_{epsilon}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}.model')
 
-    # Append episode reward to a list and log stats (every given number of episodes)
-    ep_rewards.append(episode_reward)
-    if not episode % AGGREGATE_STATS_EVERY or episode == 1:
-        average_reward = sum(ep_rewards[-AGGREGATE_STATS_EVERY:])/len(ep_rewards[-AGGREGATE_STATS_EVERY:])
-        min_reward = min(ep_rewards[-AGGREGATE_STATS_EVERY:])
-        max_reward = max(ep_rewards[-AGGREGATE_STATS_EVERY:])
-        agent.tensorboard.update_stats(reward_avg=average_reward, reward_min=min_reward, reward_max=max_reward, epsilon=epsilon)
-
-        # Save model, but only when min reward is greater or equal a set value
-        if episode % SAVE_EVERY == 0 or EPISODES == episode:
-            agent.model.save(f'models/{MODEL_NAME}__epsilon_{epsilon}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}.model')
-
-    # Decay epsilon
-    if epsilon > MIN_EPSILON:
-        epsilon *= EPSILON_DECAY
-        epsilon = max(MIN_EPSILON, epsilon)
-        
-    # let epsilon start over at the half way point
-    # if episode % EPISODES/2 == 0:
-    #     epsilon = 0.8
+        # Decay epsilon
+        if epsilon > MIN_EPSILON:
+            epsilon *= EPSILON_DECAY
+            epsilon = max(MIN_EPSILON, epsilon)
+            
+        # let epsilon start over at the half way point
+        # if episode % EPISODES/2 == 0:
+        #     epsilon = 0.8
