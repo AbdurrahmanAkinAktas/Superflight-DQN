@@ -21,7 +21,7 @@ def press(*args):
         if i != NOTHING:
             keybd_event(i, 0,0,0)
 
-    time.sleep(.01)
+    time.sleep(.001)
 
     for i in args:
         if i != NOTHING:
