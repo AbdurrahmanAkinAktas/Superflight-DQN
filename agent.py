@@ -187,8 +187,6 @@ if __name__ == '__main__':
             
         step += 1
 
-        
-
         # Append episode reward to a list and log stats (every given number of episodes)
         ep_rewards.append(episode_reward)
         if not episode % AGGREGATE_STATS_EVERY or episode == 1:
@@ -199,7 +197,7 @@ if __name__ == '__main__':
 
             # Save model, but only when min reward is greater or equal a set value
             if episode % SAVE_EVERY == 0 or EPISODES == episode:
-                agent.model.save(f'models/{MODEL_NAME}__epsilon_{epsilon}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}.model')
+                agent.model.save(f'models/{MODEL_NAME}__epsilon_{round(epsilon, 2)}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}.model')
 
         # Decay epsilon
         if epsilon > MIN_EPSILON:
